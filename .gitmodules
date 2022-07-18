@@ -1,0 +1,12 @@
+[submodule "simulator/ros_x_habitat"]
+	path = simulator/ros_x_habitat
+	url = git@github.com:TB5zhh/ros_x_habitat.git
+	branch = 2022fall
+[submodule "simulator/habitat-lab"]
+	path = simulator/habitat-lab
+	url = git@github.com:TB5zhh/habitat-lab.git
+	branch = 2022fall
+[submodule "simulator/habitat-sim"]
+	path = simulator/habitat-sim
+	url = git@github.com:TB5zhh/habitat-sim.git
+	branch = 2022fall
