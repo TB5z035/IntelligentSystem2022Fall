@@ -1,4 +1,4 @@
-FROM sim-env
+FROM sim-env-headless
 ADD ros_x_habitat /opt/workspace/src/ros_x_habitat
 WORKDIR /opt/workspace/
 RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; catkin_make'
