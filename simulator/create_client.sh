@@ -3,7 +3,7 @@ xhost +
 docker run -it --rm --gpus all --name sim2real_client \
     -u sim2real \
     --network net-1 \
-	-e ROS_MASTER_URI=http://rosmaster:11311 \
+    -e ROS_MASTER_URI=http://rosmaster:11311 \
     -e DISPLAY=$DISPLAY \
     -e QT_X11_NO_MITSHM=1 \
     -e NO_AT_BRIDGE=1 \
