@@ -14,5 +14,4 @@ docker run -it --rm --gpus all --name sim2real_server \
         -v /dev/video4:/dev/video4 \
         -v /dev/video5:/dev/video5 \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
-	-v /home/tb5zhh/data:/opt/workspace/src/ros_x_habitat/data \
-	sim-headless $@
+	docker.discover-lab.com:55555/rmus-2022-fall/sim-headless:v2.2.0 $@

@@ -1,6 +1,6 @@
 # FROM pytorch/pytorch:1.12.0-cuda11.3-cudnn8-devel AS BASE
-# FROM nvidia/cuda:11.7.0-devel-ubuntu20.04 as BASE
-FROM ubuntu:focal AS BASE
+FROM nvidia/cuda:11.7.0-devel-ubuntu20.04 as BASE
+# FROM ubuntu:focal AS BASE
 SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update \
@@ -13,6 +13,8 @@ RUN echo 'Etc/UTC' > /etc/timezone && \
      -o Acquire::http::proxy=http://10.0.0.14:50000
 
 ADD sources.list /etc/apt/
+ADD ros.sources.list /etc/apt/sources.list.d/ros1-latest.list
+RUN apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
 RUN apt-get update \
      -o Acquire::http::proxy=http://10.0.0.14:50000
 
@@ -27,7 +29,7 @@ RUN apt-get update \
      -o Acquire::http::proxy=http://10.0.0.14:50000
 RUN apt-get install -y --no-install-recommends \
      -o Acquire::http::proxy=http://10.0.0.14:50000 \
-     cuda cuda-drivers
+     cuda-drivers
 
 WORKDIR /opt
 
@@ -98,3 +100,4 @@ RUN rosdep init && \
   rosdep update --rosdistro $ROS_DISTRO
 
 ADD ROS/entrypoint.sh /opt/
+ENTRYPOINT [ "/opt/entrypoint.sh" ]
