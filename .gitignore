@@ -1,4 +1,5 @@
 *.whl
+*.zip
 Miniconda3-*
 simulator/data/
 registry.zip
