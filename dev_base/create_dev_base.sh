@@ -1,0 +1,1 @@
+docker run -it --rm --name dev_base_test --gpus all dev-base bash
