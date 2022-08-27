@@ -1,0 +1,18 @@
+FROM ros:noetic-ros-core AS ros-base
+
+FROM dev-habitat-lab AS dev-ros
+COPY --from=ros-base /opt/ros /opt/ros
+
+### ROS extra packages
+RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/ros/ubuntu/ focal main" > /etc/apt/sources.list.d/ros.list && \
+    apt-get update &&\
+    apt-get install -q -y --no-install-recommends \
+    ros-noetic-tf ros-noetic-cv-bridge ros-noetic-move-base-msgs &&\
+    rm -rf /var/lib/apt/lists/* &&\
+    apt-get clean
+
+### Bootstrap rosdep
+RUN pip3 install rosdep rosinstall empy defusedxml netifaces pandas seaborn \
+     -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN HTTP_PROXY=http://10.0.0.14:12345 HTTPS_PROXY=http://10.0.0.14:12345 ALL_PROXY=http://10.0.0.14:12345 rosdep init && \
+    HTTP_PROXY=http://10.0.0.14:12345 HTTPS_PROXY=http://10.0.0.14:12345 ALL_PROXY=http://10.0.0.14:12345 rosdep update --rosdistro $ROS_DISTRO

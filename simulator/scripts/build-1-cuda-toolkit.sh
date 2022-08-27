@@ -1,0 +1,1 @@
+docker build . -f Dockerfiles/Dockerfile.cudatoolkit -t dev-cuda-toolkit

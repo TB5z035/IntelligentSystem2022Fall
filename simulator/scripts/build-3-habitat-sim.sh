@@ -1,0 +1,1 @@
+docker build . -f Dockerfiles/Dockerfile.habitat-lab -t dev-habitat-lab
