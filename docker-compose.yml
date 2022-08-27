@@ -19,24 +19,6 @@ services:
     depends_on:
       - rosmaster
     command: ["rostopic", "list"]
-  registry:
-    image: registry:2
-    container_name: registry
-    environment:
-      REGISTRY_HTTP_TLS_CERTIFICATE: /certs/docker.discover-lab.com.crt
-      REGISTRY_HTTP_TLS_KEY: /certs/docker.discover-lab.com.key
-      REGISTRY_AUTH: htpasswd
-      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
-      REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
-    volumes:
-      - /data/tb5zhh/docker_registry:/var/lib/registry:rw
-      - /home/tb5zhh/RoboticCloud/registry/certs:/certs:ro
-      - /home/tb5zhh/RoboticCloud/registry/auth:/auth:ro
-    networks:
-      - private
-    ports:
-      - "55555:5000"
-
   
 
 networks:

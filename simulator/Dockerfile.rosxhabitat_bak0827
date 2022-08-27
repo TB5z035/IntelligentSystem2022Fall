@@ -1,0 +1,20 @@
+FROM sim-env-headless
+ADD ros_x_habitat /opt/workspace/src/ros_x_habitat
+WORKDIR /opt/workspace/
+RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; catkin_make'
+WORKDIR /opt/workspace/src/ros_x_habitat/
+
+
+ENV PYTHONPATH=/opt/ros/noetic/lib/python3/dist-packages:/opt/workspace/devel/lib/python3/dist-packages:/opt/workspace/src/ros_x_habitat
+ENV ROS_PACKAGE_PATH=/opt/ros/noetic/share/
+# RUN . /opt/ros/$ROS_DISTRO/setup.sh
+# RUN echo source "/opt/ros/$ROS_DISTRO/setup.bash" >> /root/.bashrc
+# RUN echo PYTHONPATH=\$PYTHONPATH:/opt/workspace/devel/lib/python3/dist-packages >> /root/.bashrc
+
+RUN apt-get install -y vim
+
+# CMD /bin/bash -c '. /opt/ros/noetic/setup.bash; python3 -m src.scripts.roam_with_joy --hab-env-config-path ./configs/roam_configs/pointnav_rgbd_roam_mp3d_test_scenes.yaml'
+CMD /bin/bash -c '. /opt/ros/noetic/setup.bash; python -m src.nodes.habitat_env_node --node-name sim_env --task-config ./configs/roam_configs/pointnav_rgbd_roam_mp3d_test_scenes.yaml --enable-physics-sim --use-continuous-agent --round 0'
+
+# RUN python3 -m src.scripts.roam_with_joy --hab-env-config-path ./configs/roam_configs/pointnav_rgbd_roam_mp3d_test_scenes.yaml
+# -v data/ /opt/workspace/src/ros_x_habitat/data/

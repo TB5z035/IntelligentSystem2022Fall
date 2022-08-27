@@ -1,0 +1,1 @@
+- dev_base/Dockerfile.base: ubuntu:focal + conda + torch 1.12.0 + CUDA drivers
