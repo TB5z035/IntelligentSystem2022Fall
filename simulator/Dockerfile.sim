@@ -1,5 +1,8 @@
-FROM dev-base AS habitat-sim
+##########################################################################
+FROM dev-base AS sim-env-headless
 SHELL ["/bin/bash", "-c"]
+
+### CUDA Toolkit 11.7
 RUN  distribution=$(. /etc/os-release;echo $ID$VERSION_ID | sed -e 's/\.//g') && \
      wget https://developer.download.nvidia.com/compute/cuda/repos/$distribution/x86_64/cuda-$distribution.pin -P /tmp && \
      mv /tmp/cuda-$distribution.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
@@ -8,9 +11,13 @@ RUN  distribution=$(. /etc/os-release;echo $ID$VERSION_ID | sed -e 's/\.//g') &&
      apt-get update -o Acquire::http::proxy=http://10.0.0.14:12345 && \
      apt-get install -y --no-install-recommends cuda-toolkit-11-7 -o Acquire::http::proxy=http://10.0.0.14:12345 && \
      rm -rf /var/lib/apt/lists/* && apt-get clean && rm -rf /etc/apt/sources.list.d/cuda.list 
+
+### Build essentials
 RUN apt-get update && apt-get install -y -q --no-install-recommends \
      build-essential cmake libc6-dev git libjpeg-dev libglm-dev libgl1-mesa-glx libegl1-mesa-dev mesa-utils xorg-dev freeglut3-dev && \
      rm -rf /var/lib/apt/lists/* && apt-get clean
+
+### habitat-sim
 ADD habitat-sim/ /opt/habitat-sim/
 WORKDIR /opt/habitat-sim/
 RUN pip3 install -r requirements.txt \
@@ -20,7 +27,7 @@ RUN pip3 install \
      numpy==1.21.6
 RUN CUDACXX=/usr/local/cuda-11.7/bin/nvcc python3 setup.py install --with-cuda --bullet --headless
 
-FROM habitat-sim AS habitat-lab
+### habitat-lab
 ADD habitat-lab/ /opt/habitat-lab/
 WORKDIR /opt/habitat-lab/
 RUN pip3 install -r requirements.txt \
@@ -29,41 +36,32 @@ RUN pip3 install protobuf==3.19.1 webdataset==0.1.40 moviepy lmdb tensorboard==2
      -i https://pypi.tuna.tsinghua.edu.cn/simple
 RUN python3 setup.py develop --all --index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
-FROM habitat-lab AS ros_with_habitat
-RUN apt-get update && apt-get install -q -y --no-install-recommends \
-    dirmngr \
-    gnupg2 \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-
+##########################################################################
+FROM sim-env-headless AS ros_with_habitat
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 ENV ROS_DISTRO noetic
 
-# RUN apt-get update \
-#     -o Acquire::http::proxy=http://10.0.0.14:12345 
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
 
+### ROS noetic
 RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/ros/ubuntu/ focal main" > /etc/apt/sources.list.d/ros.list && \
-    apt-get update && apt-get install -q -y --no-install-recommends \
-    ros-noetic-ros-core=1.5.0-1* \
-    ros-noetic-tf \
-    ros-noetic-cv-bridge \
-    ros-noetic-move-base-msgs \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get update &&\
+    apt-get install -q -y --no-install-recommends \
+    ros-noetic-ros-core=1.5.0-1* ros-noetic-tf ros-noetic-cv-bridge ros-noetic-move-base-msgs &&\
+    rm -rf /var/lib/apt/lists/* &&\
+    apt-get clean
 
-
-# install bootstrap tools
+### Bootstrap rosdep
 RUN pip3 install rosdep rosinstall empy defusedxml netifaces pandas seaborn \
      -i https://pypi.tuna.tsinghua.edu.cn/simple
-
-# bootstrap rosdep
 RUN HTTP_PROXY=http://10.0.0.14:12345 HTTPS_PROXY=http://10.0.0.14:12345 ALL_PROXY=http://10.0.0.14:12345 rosdep init && \
   HTTP_PROXY=http://10.0.0.14:12345 HTTPS_PROXY=http://10.0.0.14:12345 ALL_PROXY=http://10.0.0.14:12345 rosdep update --rosdistro $ROS_DISTRO
 
 ADD ROS/entrypoint.sh /opt/
 ENTRYPOINT [ "/opt/entrypoint.sh" ]
 
+### ros_x_habitat
 ADD ros_x_habitat /opt/workspace/src/ros_x_habitat
 WORKDIR /opt/workspace/
 RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; catkin_make'
@@ -71,9 +69,6 @@ WORKDIR /opt/workspace/src/ros_x_habitat/
 
 ENV PYTHONPATH=/opt/conda/lib/python3.7/site-packages:/opt/ros/noetic/lib/python3/dist-packages:/opt/workspace/devel/lib/python3/dist-packages:/opt/workspace/src/ros_x_habitat
 ENV ROS_PACKAGE_PATH=/opt/ros/noetic/share/
-
 ADD data/ /opt/workspace/src/ros_x_habitat/data
-
 CMD /bin/bash -c '. /opt/ros/noetic/setup.bash; python -m src.nodes.habitat_env_node --node-name sim_env --task-config ./configs/roam_configs/pointnav_rgbd_roam_mp3d_test_scenes.yaml --enable-physics-sim --use-continuous-agent --round 0'
 
-# RUN python3 -m src.scripts.roam_with_joy --hab-env-config-path ./configs/roam_configs/pointnav_rgbd_roam_mp3d_test_scenes.yaml
