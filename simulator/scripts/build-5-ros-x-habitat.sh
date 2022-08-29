@@ -1,0 +1,1 @@
+docker build . -f Dockerfiles/Dockerfile.ros_x_habitat -t dev-ros-x-habitat

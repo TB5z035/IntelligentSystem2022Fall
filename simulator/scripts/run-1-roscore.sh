@@ -1,0 +1,1 @@
+docker run -dit --rm --name rosmaster --network net-1 ros:noetic-ros-core roscore
