@@ -1,4 +1,4 @@
-docker run -dit --rm --gpus all --network net-1 --name cli\
+docker run -it --rm --gpus all --network net-1 --name cli\
 	--cpus=5.6 -m 8192M \
 	-v /dev:/dev -e DISPLAY=:2 -e QT_X11_NO_MITSHM=1 \
     -e ROS_MASTER_URI=http://rosmaster:11311 \
