@@ -1,5 +1,5 @@
 ##########################################################################
-FROM dev-base AS dev-cuda-toolkit
+FROM dev-cuda-runtime AS dev-cuda-toolkit
 SHELL ["/bin/bash", "-c"]
 
 ### CUDA Toolkit 11.7
@@ -8,8 +8,8 @@ RUN  distribution=$(. /etc/os-release;echo $ID$VERSION_ID | sed -e 's/\.//g') &&
      mv /tmp/cuda-$distribution.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
      apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/$distribution/x86_64/3bf863cc.pub && \
      echo "deb http://developer.download.nvidia.com/compute/cuda/repos/$distribution/x86_64 /" | tee /etc/apt/sources.list.d/cuda.list && \
-     apt-get update -o Acquire::http::proxy=http://10.0.0.14:12345 && \
-     apt-get install -y --no-install-recommends cuda-toolkit-11-7 -o Acquire::http::proxy=http://10.0.0.14:12345 && \
+     apt-get update -o Acquire::http::proxy=http://${PROXY_HOST}:${PROXY_PORT} && \
+     apt-get install -y --no-install-recommends cuda-toolkit-11-7 -o Acquire::http::proxy=http://${PROXY_HOST}:${PROXY_PORT} && \
      rm -rf /var/lib/apt/lists/* && apt-get clean && rm -rf /etc/apt/sources.list.d/cuda.list 
 
 ### Build essentials

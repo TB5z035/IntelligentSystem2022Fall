@@ -5,3 +5,5 @@ RUN pip install Flask -i https://pypi.tuna.tsinghua.edu.cn/simple
 WORKDIR /opt
 
 ADD app.py .
+
+CMD ["python", "app.py"]

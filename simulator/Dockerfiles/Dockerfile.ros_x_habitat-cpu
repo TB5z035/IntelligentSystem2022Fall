@@ -1,0 +1,11 @@
+##########################################################################
+FROM dev-ros-cpu as sim-headless-cpu
+ADD ros_x_habitat /opt/workspace/src/ros_x_habitat
+WORKDIR /opt/workspace/
+RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; catkin_make'
+WORKDIR /opt/workspace/src/ros_x_habitat/
+
+ENV PYTHONPATH=/opt/conda/lib/python3.7/site-packages:/opt/ros/noetic/lib/python3/dist-packages:/opt/workspace/devel/lib/python3/dist-packages:/opt/workspace/src/ros_x_habitat
+ENV ROS_PACKAGE_PATH=/opt/ros/noetic/share/
+ADD data/ /opt/workspace/src/ros_x_habitat/data
+CMD /opt/ros/noetic/env.sh python -m src.nodes.habitat_env_node --node-name sim_env --task-config ./configs/roam_configs/pointnav_rgbd_roam_mp3d_test_scenes.yaml --enable-physics-sim --use-continuous-agent --round 0

@@ -14,3 +14,5 @@ def login():
 
     print(json.dumps(data, indent=4))
     return flask.Response(status=200)
+
+app.run(host="0.0.0.0")

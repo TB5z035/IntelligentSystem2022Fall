@@ -3,3 +3,5 @@
 Miniconda3-*
 simulator/data/
 registry.zip
+.vscode/
+**/__pycache__/

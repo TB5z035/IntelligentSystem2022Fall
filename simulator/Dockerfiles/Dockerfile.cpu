@@ -1,0 +1,80 @@
+##########################################################################
+FROM dev-cpu-runtime AS habitat-sim-cpu
+ADD habitat-sim/ /opt/habitat-sim/
+WORKDIR /opt/habitat-sim/
+
+RUN apt-get update && \
+     apt-get install -y --no-install-recommends \
+     libjpeg-dev libglm-dev libgl1-mesa-glx libegl1-mesa-dev mesa-utils xorg-dev freeglut3-dev && \
+     rm -rf /var/lib/apt/lists/* && apt-get clean
+RUN pip3 install -r requirements.txt \
+     -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3 install \
+     -i https://pypi.tuna.tsinghua.edu.cn/simple \
+     numpy==1.21.6
+RUN python3 setup.py build_ext --parallel 8 install --bullet 
+
+##########################################################################
+FROM habitat-sim-cpu AS habitat-lab-cpu
+ADD habitat-lab/ /opt/habitat-lab/
+WORKDIR /opt/habitat-lab/
+RUN pip3 install -r requirements.txt \
+     -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3 install protobuf==3.19.1 webdataset==0.1.40 moviepy lmdb tensorboard==2.8.0 ifcfg \
+     -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3 install pytest-runner
+RUN python3 setup.py develop --all --index-url https://pypi.tuna.tsinghua.edu.cn/simple
+
+##########################################################################
+FROM ros:noetic-ros-core AS ros-base
+
+FROM habitat-lab-cpu AS dev-ros-cpu
+ARG PROXY_HOST=127.0.0.1
+ARG PROXY_PORT=50000
+COPY --from=ros-base /opt/ros /opt/ros
+
+### ROS extra packages
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/ros/ubuntu/ focal main" > /etc/apt/sources.list.d/ros.list && \
+    apt-get update &&\
+    apt-get install -q -y --no-install-recommends \
+    ros-noetic-tf ros-noetic-cv-bridge ros-noetic-move-base-msgs &&\
+    rm -rf /var/lib/apt/lists/* &&\
+    apt-get clean
+
+### Bootstrap rosdep
+RUN pip3 install rosdep rosinstall empy defusedxml netifaces pandas seaborn \
+     -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN HTTP_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     HTTPS_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     ALL_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     http_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     https_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     all_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     rosdep init
+RUN HTTP_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     HTTPS_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     ALL_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     http_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     https_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     all_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     rosdep update --rosdistro noetic
+WORKDIR /opt/ros
+ENTRYPOINT [ "/opt/ros/noetic/env.sh" ]
+
+
+##########################################################################
+FROM dev-ros-cpu as sim-headless-cpu
+ADD ros_x_habitat /opt/workspace/src/ros_x_habitat
+WORKDIR /opt/workspace/
+RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; catkin_make'
+WORKDIR /opt/workspace/src/ros_x_habitat/
+
+ENV PYTHONPATH=/opt/conda/lib/python3.7/site-packages:/opt/ros/noetic/lib/python3/dist-packages:/opt/workspace/devel/lib/python3/dist-packages:/opt/workspace/src/ros_x_habitat
+ENV ROS_PACKAGE_PATH=/opt/ros/noetic/share/
+ADD data/ /opt/workspace/src/ros_x_habitat/data
+CMD /opt/ros/noetic/env.sh \
+     python -m src.nodes.habitat_env_node \
+     --node-name sim_env \
+     --task-config ./configs/roam_configs/pointnav_rgbd_roam_mp3d_test_scenes.yaml \
+     --enable-physics-sim --use-continuous-agent --round 0

@@ -1,7 +1,9 @@
 ##########################################################################
 FROM ros:noetic-ros-core AS ros-base
 
-FROM dev-base
+FROM dev-cpu-runtime
+ARG PROXY_HOST=127.0.0.1
+ARG PROXY_PORT=50000
 SHELL ["/bin/bash", "-c"]
 COPY --from=ros-base /opt/ros /opt/ros
 
@@ -13,7 +15,7 @@ RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/ros/ubuntu/ focal main" > /et
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends\
-    stow ninja-build git software-properties-common linux-headers-$(uname -r) wget gnupg2 cmake g++ sudo && \
+    stow ninja-build git software-properties-common wget gnupg2 cmake g++ sudo && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean
 
@@ -25,11 +27,30 @@ RUN src/cartographer/scripts/install_abseil.sh
 
 RUN pip3 install rosdep rosinstall \
      -i https://pypi.tuna.tsinghua.edu.cn/simple
-RUN HTTP_PROXY=http://10.0.0.14:12345 HTTPS_PROXY=http://10.0.0.14:12345 ALL_PROXY=http://10.0.0.14:12345 rosdep init
-RUN HTTP_PROXY=http://10.0.0.14:12345 HTTPS_PROXY=http://10.0.0.14:12345 ALL_PROXY=http://10.0.0.14:12345 rosdep update --rosdistro noetic
-RUN apt-get update && \
-     ROS_OS_OVERRIDE=ubuntu:20.04:focal HTTP_PROXY=http://10.0.0.14:12345 HTTPS_PROXY=http://10.0.0.14:12345 ALL_PROXY=http://10.0.0.14:12345 \
-     rosdep install --from-paths src --ignore-src --rosdistro noetic -y && \
+RUN HTTP_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     HTTPS_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     ALL_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     http_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     https_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     all_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     rosdep init
+RUN HTTP_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     HTTPS_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     ALL_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     http_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     https_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     all_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     rosdep -q update --rosdistro noetic
+RUN apt-get update -q && \
+     ROS_OS_OVERRIDE=ubuntu:20.04:focal \
+     DEBIAN_FRONTEND=noninteractive \
+     HTTP_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     HTTPS_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     ALL_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     http_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     https_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     all_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     rosdep -q install --from-paths src --ignore-src --rosdistro noetic -y && \
      rm -rf /var/lib/apt/lists/* && \
      apt-get clean
 
@@ -44,8 +65,15 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A0
 RUN add-apt-repository "deb https://librealsense.intel.com/Debian/apt-repo $(lsb_release -cs) main" -u
 RUN apt-get update && \
      source /opt/workspace/devel_isolated/setup.bash && \
-     ROS_OS_OVERRIDE=ubuntu:20.04:focal HTTP_PROXY=http://10.0.0.14:12345 HTTPS_PROXY=http://10.0.0.14:12345 ALL_PROXY=http://10.0.0.14:12345 \
-     rosdep install --from-paths src --ignore-src --rosdistro noetic -y && \
+     ROS_OS_OVERRIDE=ubuntu:20.04:focal \
+     DEBIAN_FRONTEND=noninteractive \
+     HTTP_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     HTTPS_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     ALL_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
+     http_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     https_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     all_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
+     rosdep -q install --from-paths src --ignore-src --rosdistro noetic -y && \
      rm -rf /var/lib/apt/lists/* && \
      apt-get clean
 

@@ -1,0 +1,6 @@
+FROM docker.discover-lab.com:55555/rmus-2022-fall/sim-headless:v4.0.0
+
+WORKDIR /opt/workspace/src/ros_x_habitat/
+
+ADD ros_x_habitat/src/nodes/habitat_env_node_3.py /opt/workspace/src/ros_x_habitat/src/nodes/habitat_env_node.py
+
