@@ -1,4 +1,4 @@
-FROM docker.discover-lab.com:55555/rmus-2022-fall/sim-headless:v4.0.0
+FROM docker.discover-lab.com:55555/rmus-2022-fall/sim-headless:v4.1.0
 
 WORKDIR /opt/workspace/src/ros_x_habitat/
 

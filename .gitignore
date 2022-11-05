@@ -1,7 +1,6 @@
 *.whl
 *.zip
 Miniconda3-*
-simulator/data/
-registry.zip
+simulator/data*
 .vscode/
 **/__pycache__/

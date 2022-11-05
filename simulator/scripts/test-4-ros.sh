@@ -1,1 +1,0 @@
-docker run -it --rm --name dev_ros --gpus all dev-ros bash

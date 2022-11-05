@@ -1,5 +1,5 @@
 ##########################################################################
-FROM dev-cpu-runtime AS habitat-sim-cpu
+FROM tb5zhh/dev-base-cpu:py37 AS dev-habitat-sim
 ADD habitat-sim/ /opt/habitat-sim/
 WORKDIR /opt/habitat-sim/
 
@@ -15,7 +15,7 @@ RUN pip3 install \
 RUN python3 setup.py build_ext --parallel 8 install --bullet 
 
 ##########################################################################
-FROM habitat-sim-cpu AS habitat-lab-cpu
+FROM dev-habitat-sim AS dev-habitat-lab
 ADD habitat-lab/ /opt/habitat-lab/
 WORKDIR /opt/habitat-lab/
 RUN pip3 install -r requirements.txt \
@@ -28,9 +28,8 @@ RUN python3 setup.py develop --all --index-url https://pypi.tuna.tsinghua.edu.cn
 ##########################################################################
 FROM ros:noetic-ros-core AS ros-base
 
-FROM habitat-lab-cpu AS dev-ros-cpu
-ARG PROXY_HOST=127.0.0.1
-ARG PROXY_PORT=50000
+FROM dev-habitat-lab AS dev-ros
+SHELL ["/bin/bash", "-c"]
 COPY --from=ros-base /opt/ros /opt/ros
 
 ### ROS extra packages
@@ -38,33 +37,21 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6
 RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/ros/ubuntu/ focal main" > /etc/apt/sources.list.d/ros.list && \
     apt-get update &&\
     apt-get install -q -y --no-install-recommends \
-    ros-noetic-tf ros-noetic-cv-bridge ros-noetic-move-base-msgs &&\
+    ros-noetic-tf ros-noetic-cv-bridge ros-noetic-move-base-msgs ros-noetic-image-view libcanberra-gtk-module &&\
     rm -rf /var/lib/apt/lists/* &&\
     apt-get clean
 
 ### Bootstrap rosdep
 RUN pip3 install rosdep rosinstall empy defusedxml netifaces pandas seaborn \
      -i https://pypi.tuna.tsinghua.edu.cn/simple
-RUN HTTP_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
-     HTTPS_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
-     ALL_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
-     http_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
-     https_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
-     all_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
-     rosdep init
-RUN HTTP_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
-     HTTPS_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
-     ALL_PROXY=http://${PROXY_HOST}:${PROXY_PORT} \
-     http_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
-     https_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
-     all_proxy=http://${PROXY_HOST}:${PROXY_PORT} \
-     rosdep update --rosdistro noetic
-WORKDIR /opt/ros
+ADD proxy.sh /opt/proxy.sh
+ADD direct.sh /opt/direct.sh
+RUN source /opt/proxy.sh && rosdep init && rosdep update --rosdistro noetic && source /opt/direct.sh
 ENTRYPOINT [ "/opt/ros/noetic/env.sh" ]
 
-
 ##########################################################################
-FROM dev-ros-cpu as sim-headless-cpu
+FROM dev-ros as dev-ros-x-habitat
+ARG TMP
 ADD ros_x_habitat /opt/workspace/src/ros_x_habitat
 WORKDIR /opt/workspace/
 RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; catkin_make'

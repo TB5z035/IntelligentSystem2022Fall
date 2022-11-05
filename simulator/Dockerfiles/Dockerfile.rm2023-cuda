@@ -1,0 +1,13 @@
+FROM docker.discover-lab.com:55555/rm-sim2real/server:v4.1.0
+RUN rm -rf /opt/workspace/src/ros_x_habitat/data
+ADD data_rm2023 /opt/workspace/src/ros_x_habitat/data
+ADD ros_x_habitat/src/nodes/habitat_env_node_rm2023.py /opt/workspace/src/ros_x_habitat/src/nodes/habitat_env_node.py
+ADD area.png /opt/workspace/src/ros_x_habitat/data/area.png
+ADD ros_x_habitat/configs/roam_configs/pointnav_rgbd_roam_mp3d_test_scenes_rm2023.yaml \
+     /opt/workspace/src/ros_x_habitat/configs/roam_configs/pointnav_rgbd_roam_mp3d_test_scenes.yaml
+RUN apt-get update && \
+    apt-get install -q -y --no-install-recommends \
+    libcanberra-gtk3-module &&\
+    rm -rf /var/lib/apt/lists/* &&\
+    apt-get clean
+CMD python src/scripts/roam_with_joy.py --hab-env-config-path ./configs/roam_configs/pointnav_rgbd_roam_mp3d_test_scenes.yaml --round 0

@@ -1,1 +1,0 @@
-docker build . -f Dockerfiles/Dockerfile.ros -t dev-ros

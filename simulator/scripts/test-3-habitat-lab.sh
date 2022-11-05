@@ -1,1 +1,0 @@
-docker run -it --rm --name dev_habitat_lab --gpus all dev-habitat-lab bash
