@@ -1,1 +1,0 @@
-docker build . -t cli_test -f Dockerfile
